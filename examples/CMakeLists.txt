@@ -1,0 +1,2 @@
+add_subdirectory(HellowWorld)
+add_subdirectory(Lorenz_96)
