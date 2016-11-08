@@ -1,30 +1,111 @@
 #ifndef ODE_JAC_H
 #define ODE_JAC_H
 
-#include "ODEUtility.h"
+#include "ROWPlus/Core/ODEUtility.h"
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <stdexcept>
 #include <stdio.h>
 
-namespace {
+namespace ROWPlus {
+using namespace Eigen;
 
-template<typename FunctorType, typename Scalar, typename Derived>
-Eigen::DenseIndex
-fdjac(FunctorType &Functor,
-      Scalar t,
-      Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &x,
-      const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &fvec,
-      Eigen::DenseBase<Derived> &fjac,
-      Eigen::DenseIndex ml,
-      Eigen::DenseIndex mu,
-      Scalar epsfcn) {
+/**
+ * CRTP for static polymorphism
+ */
+template<class T, typename FunctorType, typename Scalar = double>
+class ODEJac {
+ public:
+  typedef Eigen::DenseIndex Index;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> VectorType;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
+
+  ODEJac(FunctorType *_functor, ODEJacType _tyepName,
+         const ODEOptions <Scalar> &_opt)
+      : functor(_functor),
+        typeName(_tyepName),
+        neq(functor->inputs()),
+        iUserJac(_opt.iUserJac),
+        maxJacReuse(_opt.maxJacReuse),
+        maxKryDim(_opt.maxKryDim),
+        minKryDim(_opt.minKryDim),
+        epsfcn(_opt.epsfcn),
+        arnTol(_opt.absTol),
+        nJacReuse(_opt.maxJacReuse),
+        iReSize(true) {}
+
+  ODEJacType type() const { return typeName; }
+
+  Index init(Scalar t,
+             Eigen::Ref<VectorType> u,
+             Eigen::Ref<VectorType> f,
+             Scalar _ehg,
+             bool rejected = false) {
+    return static_cast<T *>(this)->initIMPL(t, u, f, _ehg, rejected);
+  };
+
+  Index stage(Index s,
+              const Eigen::Ref<const VectorType> b,
+              Eigen::Ref<VectorType> x) {
+    return static_cast<T *>(this)->stageIMPL(s, b, x);
+  };
+
+  void initJacReuse() { nJacReuse = maxJacReuse; }
+
+  void updateOptions(const ODEOptions <Scalar> &_opt) {
+    iReSize = (maxKryDim != _opt.maxKryDim);
+    iUserJac = _opt.iUserJac;
+    maxJacReuse = _opt.maxJacReuse;
+    maxKryDim = _opt.maxKryDim;
+    minKryDim = _opt.minKryDim;
+    nJacReuse = maxJacReuse;
+    epsfcn = _opt.epsfcn;
+    arnTol = _opt.absTol;
+  }
+
+ protected:
+  FunctorType *functor;
+  const ODEJacType typeName;
+  bool iUserJac;
+  bool iReSize;
+  Index neq;
+  Index maxJacReuse;
+  Index maxKryDim;
+  Index minKryDim;
+  Scalar epsfcn;
+  Scalar arnTol;
+  Index nJacReuse;
+
+  Index fdjac(FunctorType &Functor, Scalar t,
+              const Eigen::Ref<const VectorType> x,
+              const Eigen::Ref<const VectorType> fvec,
+              Eigen::Ref<MatrixType> fjac,
+              Index ml,
+              Index mu,
+              Scalar epsfcn);
+
+  Index fdjacv(FunctorType &Functor,
+               Scalar t,
+               const Eigen::Ref<const VectorType> x,
+               const Eigen::Ref<const VectorType> fvec,
+               const Eigen::Ref<const VectorType> vvec,
+               Eigen::Ref<VectorType> jacv,
+               Scalar epsfcn);
+};
+
+template<class T, typename FunctorType, typename Scalar>
+Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjac(FunctorType &Functor,
+                                                        Scalar t,
+                                                        const Eigen::Ref<const VectorType> x,
+                                                        const Eigen::Ref<const VectorType> fvec,
+                                                        Eigen::Ref<MatrixType> fjac,
+                                                        Eigen::DenseIndex ml,
+                                                        Eigen::DenseIndex mu,
+                                                        Scalar epsfcn) {
 
   using namespace Eigen;
   using std::sqrt;
   using std::abs;
-
-  typedef DenseIndex Index;
 
   /* Local variables */
   Scalar h;
@@ -88,18 +169,17 @@ fdjac(FunctorType &Functor,
   return 0;
 }
 
-template<typename FunctorType, typename Scalar>
-Eigen::DenseIndex fdjacv(FunctorType &Functor,
-                         Scalar t,
-                         const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &x,
-                         const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &fvec,
-                         const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &vvec,
-                         Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &jacv,
-                         Scalar epsfcn) {
+template<class T, typename FunctorType, typename Scalar>
+Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjacv(FunctorType &Functor,
+                                                         Scalar t,
+                                                         const Eigen::Ref<const VectorType> x,
+                                                         const Eigen::Ref<const VectorType> fvec,
+                                                         const Eigen::Ref<const VectorType> vvec,
+                                                         Eigen::Ref<VectorType> jacv,
+                                                         Scalar epsfcn) {
   using std::sqrt;
   using std::abs;
   using namespace Eigen;
-  typedef DenseIndex Index;
 
   /* Local variables */
   Scalar eps;
@@ -121,78 +201,6 @@ Eigen::DenseIndex fdjacv(FunctorType &Functor,
   return 0;
 }
 
-} // end namespace internal
-
-namespace ROWPlus {
-using namespace Eigen;
-
-/**
- * CRTP for static polymorphism
- */
-template<class T, typename FunctorType, typename Scalar = double>
-class ODEJac {
- public:
-  typedef DenseIndex Index;
-  typedef Matrix<Scalar, Dynamic, 1> VectorType;
-  typedef Matrix<Scalar, Dynamic, Dynamic> MatrixType;
-
-  ODEJac(FunctorType *_functor, ODEJacType _tyepName,
-         const ODEOptions <Scalar> &_opt)
-      : functor(_functor),
-        typeName(_tyepName),
-        neq(functor->inputs()),
-        iUserJac(_opt.iUserJac),
-        maxJacReuse(_opt.maxJacReuse),
-        maxKryDim(_opt.maxKryDim),
-        minKryDim(_opt.minKryDim),
-        epsfcn(_opt.epsfcn),
-        arnTol(_opt.absTol),
-        nJacReuse(_opt.maxJacReuse),
-        iReSize(true) {}
-
-  ODEJacType type() const { return typeName; }
-
-  Index init(Scalar t, VectorType &u, VectorType &f, Scalar _ehg,
-             bool rejected = false) {
-    return static_cast<T *>(this)->initIMPL(t, u, f, _ehg, rejected);
-  };
-
-  Index stage(Index s, const VectorType &b, VectorType &x) {
-    return static_cast<T *>(this)->stageIMPL(s, b, x);
-  };
-
-  void initJacReuse() { nJacReuse = maxJacReuse; }
-
-  void updateOptions(const ODEOptions <Scalar> &_opt) {
-    iReSize = (maxKryDim != _opt.maxKryDim);
-    iUserJac = _opt.iUserJac;
-    maxJacReuse = _opt.maxJacReuse;
-    maxKryDim = _opt.maxKryDim;
-    minKryDim = _opt.minKryDim;
-    nJacReuse = maxJacReuse;
-    epsfcn = _opt.epsfcn;
-    arnTol = _opt.absTol;
-    // cout << "maxJacReuse = " << maxJacReuse << endl
-    //      << "maxKryDim = " << maxKryDim << endl
-    //      << "minKryDim = " << minKryDim << endl
-    //      << "epsfcn = " << epsfcn << endl
-    //      << "arnTol = " << arnTol << endl;
-  }
-
- protected:
-  FunctorType *functor;
-  const ODEJacType typeName;
-  Index neq;
-  bool iUserJac;
-  Index maxJacReuse;
-  Index maxKryDim;
-  Index minKryDim;
-  Scalar epsfcn;
-  Scalar arnTol;
-  Index nJacReuse;
-  bool iReSize;
-};
-
 template<typename FunctorType, typename Scalar = double>
 class ODEJacZRO
     : public ODEJac<ODEJacZRO<FunctorType, Scalar>, FunctorType, Scalar> {
@@ -205,12 +213,17 @@ class ODEJacZRO
       : ODEJac<ODEJacZRO<FunctorType, Scalar>, FunctorType, Scalar>(ZRO, _opt) {
   }
 
-  Index initIMPL(Scalar t, VectorType &u, VectorType &f, Scalar _ehg,
+  Index initIMPL(Scalar t,
+                 Eigen::Ref<VectorType> u,
+                 Eigen::Ref<VectorType> f,
+                 Scalar _ehg,
                  bool rejected = false) {
     return 0;
   }
 
-  Index stageIMPL(Index s, const VectorType &b, VectorType &x) { return 0; };
+  Index stageIMPL(Index s,
+                  const Eigen::Ref<const VectorType> b,
+                  Eigen::Ref<VectorType> x) { return 0; };
 };
 
 /**
@@ -236,7 +249,10 @@ class ODEJacEXA
     eigen_assert(this->neq == this->functor->values());
   }
 
-  Index initIMPL(Scalar t, VectorType &u, VectorType &f, Scalar _ehg,
+  Index initIMPL(Scalar t,
+                 Eigen::Ref<VectorType> u,
+                 Eigen::Ref<VectorType> f,
+                 Scalar _ehg,
                  bool rejected = false) {
     ehg = _ehg;
     Index nret = 0;
@@ -265,7 +281,9 @@ class ODEJacEXA
     return nret;
   }
 
-  Index stageIMPL(Index s, const VectorType &b, VectorType &x) {
+  Index stageIMPL(Index s,
+                  const Eigen::Ref<const VectorType> b,
+                  Eigen::Ref<VectorType> x) {
     // (ehg*I - J) x = b
     x.noalias() = MLU.solve(b);
     return 0;
@@ -301,7 +319,10 @@ class ODEJacSAP
     resizeWork();
   }
 
-  Index initIMPL(Scalar t, VectorType &u, VectorType &f, Scalar _ehg,
+  Index initIMPL(Scalar t,
+                 Eigen::Ref<VectorType> u,
+                 Eigen::Ref<VectorType> f,
+                 Scalar _ehg,
                  bool rejected = false) {
     resizeWork();
     ehg = _ehg;
@@ -321,7 +342,9 @@ class ODEJacSAP
     return nret;
   }
 
-  Index stageIMPL(Index s, const VectorType &b, VectorType &x) {
+  Index stageIMPL(Index s,
+                  const Eigen::Ref<const VectorType> b,
+                  Eigen::Ref<VectorType> x) {
     // (ehg*I - J) x = b
     if (mk != this->maxKryDim) {
       wb1.resize(mk);
@@ -369,7 +392,7 @@ class ODEJacSAP
     }
   }
 
-  Index arnoldi(Scalar t, VectorType &u, VectorType &f) {
+  Index arnoldi(Scalar t, Eigen::Ref<VectorType> u, Eigen::Ref<VectorType> f) {
     Index nret = 0;
     Scalar eta = 1.0e4;
     Scalar tau, rho;
@@ -384,7 +407,7 @@ class ODEJacSAP
     for (Index i = 0; i < this->maxKryDim; i++) {
       wa1 = Q.col(i);
       if (!this->iUserJac) {
-        if (fdjacv(*this->functor, t, u, f, wa1, wa2, this->epsfcn) < 0)
+        if (this->fdjacv(*this->functor, t, u, f, wa1, wa2, this->epsfcn) < 0)
           return -1;
         nret++;
       } else {
@@ -431,7 +454,10 @@ class ODEJacRAP
     resizeWork();
   }
 
-  Index initIMPL(Scalar t, VectorType &u, VectorType &f, Scalar _ehg,
+  Index initIMPL(Scalar t,
+                 Eigen::Ref<VectorType> u,
+                 Eigen::Ref<VectorType> f,
+                 Scalar _ehg,
                  bool rejected = false) {
     resizeWork();
     ehg = _ehg;
@@ -455,7 +481,9 @@ class ODEJacRAP
     return nret;
   }
 
-  Index stageIMPL(Index s, const VectorType &b, VectorType &x) {
+  Index stageIMPL(Index s,
+                  const Eigen::Ref<const VectorType> b,
+                  Eigen::Ref<VectorType> x) {
     // (ehg*I - J) x = b
     if (mk != this->maxKryDim) {
       wb1.resize(mk);
@@ -504,7 +532,10 @@ class ODEJacRAP
     }
   }
 
-  Index arnoldi(Scalar t, VectorType &u, VectorType &f, Index _maxKryDim) {
+  Index arnoldi(Scalar t,
+                Eigen::Ref<VectorType> u,
+                Eigen::Ref<VectorType> f,
+                Index _maxKryDim) {
     Index nret = 0;
     Scalar eta = 1.0e4;
     Scalar tau, rho;
@@ -548,7 +579,10 @@ class ODEJacRAP
     return nret;
   }
 
-  Index arnoldi_reuse(Scalar t, VectorType &u, VectorType &f, Index _maxKryDim,
+  Index arnoldi_reuse(Scalar t,
+                      Eigen::Ref<VectorType> u,
+                      Eigen::Ref<VectorType> f,
+                      Index _maxKryDim,
                       Index _minKryDim) {
     Index nret = 0;
     Scalar eta = 1.0e4;

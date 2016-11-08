@@ -26,8 +26,7 @@ int main() {
   opts.absTol = aTol;
   opts.h_max = 1e-2;
   opts.h_init = 1e-5;
-  opts.TypeScheme = ROK4A;
-  opts.iWrite = true;
+  opts.TypeScheme = ROK4L;
   opts.iUserJac = false;
   opts.maxKryDim = 4;
   opts.minKryDim = 4;
@@ -36,6 +35,7 @@ int main() {
 
   ODESolver<ROWPlus::ODEJacSAP<lorenz96>, lorenz96> solver(&fun, opts);
   ROWPlusSolverSpace::Status ret = solver.step(x_1, 0.0, t1);
+  solver.getStats().print();
   assert(ret == ROWPlusSolverSpace::ComputeSucessful);
 
   lorenz96::state_type x_2(40);

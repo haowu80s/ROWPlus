@@ -17,7 +17,7 @@ using namespace std;
 
 // Generic functor
 // for the evaluation of f(t, u), f_u(t, u), f_t(t, U), etc.
-template <typename _Scalar, DenseIndex NX = Dynamic, DenseIndex NY = Dynamic>
+template<typename _Scalar, DenseIndex NX = Dynamic, DenseIndex NY = Dynamic>
 struct BaseFunctor {
   typedef _Scalar Scalar;
   enum { InputsAtCompileTime = NX, ValuesAtCompileTime = NY };
@@ -63,17 +63,18 @@ enum ODEJacType {
   RAP = 3  // Jacobian-Reuse Arnoldi process
 };
 
-template <typename Scalar = double> struct ODEOptions {
+template<typename Scalar = double>
+struct ODEOptions {
   typedef DenseIndex Index;
   ODEOptions()
       : TypeScheme(GRK4T), relTol(1e-4),
         absTol(sqrt(NumTraits<Scalar>::epsilon())), h_init(0.0),
         h_min(NumTraits<Scalar>::epsilon()),
         h_max(NumTraits<Scalar>::highest()), maxSteps(100000), iAuto(true),
-        iUserJac(false), iUserFt(false), iUserAskedKill(false), iWrite(false),
+        iUserJac(false), iUserFt(false), iUserAskedKill(false),
         stepControl{0.25, 4.0, 0.8}, epsfcn(Scalar(0.)),
-        epsmch(NumTraits<Scalar>::epsilon()), kryTol(1e-1), maxKryDim(4),
-        minKryDim(4), maxJacReuse(0), iCheckPos(false) {}
+        epsmch(NumTraits<Scalar>::epsilon()), kryTol(1e-3), maxKryDim(4),
+        minKryDim(4), maxJacReuse(0){}
   ODESchemeType TypeScheme;
   Scalar relTol;
   Scalar absTol;
@@ -85,7 +86,6 @@ template <typename Scalar = double> struct ODEOptions {
   bool iUserJac;
   bool iUserFt;
   bool iUserAskedKill;
-  bool iWrite;
   Scalar stepControl[3]; // Parameters for step size selection.
   // eps for Scalar
   Scalar epsfcn;
@@ -96,11 +96,10 @@ template <typename Scalar = double> struct ODEOptions {
   Index minKryDim;
   // options for Jacobian reuse
   Index maxJacReuse;
-  // check positivity
-  bool iCheckPos;
 };
 
-template <typename Scalar = double> struct ODEStat {
+template<typename Scalar = double>
+struct ODEStat {
   ODEStat()
       : nsteps(0), nstepsr(0), nfeval(0), nfdt(0), njac(0), njacv(0),
         lasths(-1.0) {}
@@ -134,14 +133,15 @@ template <typename Scalar = double> struct ODEStat {
   }
 };
 
-template <typename Scalar = double> class ODERecord {
-public:
+template<typename Scalar = double>
+class ODERecord {
+ public:
   typedef DenseIndex Index;
   typedef Matrix<Scalar, Dynamic, 1> VectorType;
   typedef Matrix<Scalar, Dynamic, Dynamic> MatrixType;
 
   void addSol(const Scalar t, const VectorType &u) {
-    vector<Scalar> uVec(u.data(), u.data() + u.size());
+    vector <Scalar> uVec(u.data(), u.data() + u.size());
     tRecords.push_back(t);
     uRec.push_back(uVec);
   }
@@ -161,7 +161,7 @@ public:
     file.close();
   }
 
-private:
+ private:
   vector<Scalar> tRecords;
   vector<vector<Scalar> > uRec;
 };

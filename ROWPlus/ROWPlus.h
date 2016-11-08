@@ -2,9 +2,9 @@
 #ifndef ROWMAPLUS_H
 #define ROWMAPLUS_H
 
-#include "Core/ODEUtility.h"
-#include "Core/ODEJac.h"
-#include "Core/ODEScheme.h"
-#include "Core/ODESolver.h"
+#include "ROWPlus/Core/ODEUtility.h"
+#include "ROWPlus/Core/ODEJac.h"
+#include "ROWPlus/Core/ODEScheme.h"
+#include "ROWPlus/Core/ODESolver.h"
 
 #endif // ROWMAPLUS

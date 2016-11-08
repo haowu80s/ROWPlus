@@ -26,8 +26,7 @@ void lorenz96::operator()(const lorenz96::state_type &x,
       -x[inputs() - 2] * (x[inputs() - 3] - x[0]) - x[inputs() - 1] + m_F;
 }
 
-DenseIndex lorenz96::f(double t, const Ref<const VectorXd> &x,
-                       VectorXd &v) {
+int lorenz96::f(double t, const Ref<const VectorXd> x, Ref<VectorXd> v) {
   for (int j = 2; j < inputs() - 1; ++j) {
     v[j] = -x[j - 1] * (x[j - 2] - x[j + 1]) - x[j] + m_F;
   }
@@ -38,15 +37,15 @@ DenseIndex lorenz96::f(double t, const Ref<const VectorXd> &x,
   return 0;
 };
 
-DenseIndex lorenz96::fdt(double t, const Ref<const VectorXd> &x,
-                         VectorXd &v) {
+int lorenz96::fdt(double t, const Ref<const VectorXd> x,
+                  Ref<VectorXd> v) {
   throw std::runtime_error("lorenz96::fdt() is not implemented.");
   return -1;
 };
 
-DenseIndex lorenz96::df(double t,
-                        const Ref<const VectorXd> &x,
-                        MatrixXd &m) {
+int lorenz96::df(double t,
+                 const Ref<const VectorXd> x,
+                 Ref<MatrixXd> m) {
   throw std::runtime_error("lorenz96::df() is not implemented.");
   return -1;
 };

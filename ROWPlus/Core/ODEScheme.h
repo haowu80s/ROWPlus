@@ -1,7 +1,7 @@
 #ifndef ODE_SCHEME_H
 #define ODE_SCHEME_H
 
-#include "ODEUtility.h"
+#include "ROWPlus/Core/ODEUtility.h"
 #include <Eigen/Core>
 #include <stdexcept>
 #include <stdio.h>
