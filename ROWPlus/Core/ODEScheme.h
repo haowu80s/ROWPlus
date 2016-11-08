@@ -1,31 +1,30 @@
 #ifndef ODE_SCHEME_H
 #define ODE_SCHEME_H
 
-#include "ROWPlus/Core/ODEUtility.h"
-#include <Eigen/Core>
 #include <stdexcept>
-#include <stdio.h>
 #include <vector>
-// TODO remove after debugging
 #include <iostream>
+
+#include <Eigen/Core>
+
+#include "ROWPlus/Core/ODEUtility.h"
 
 namespace ROWPlus {
 
-using namespace Eigen;
 using std::unique_ptr;
 using std::vector;
 
 template<typename Scalar = double>
 class ODEScheme {
  public:
-  typedef DenseIndex Index;
-  typedef Matrix<Scalar, Dynamic, 1> VectorType;
-  typedef Matrix<Scalar, Dynamic, Dynamic> MatrixType;
+  typedef Eigen::DenseIndex Index;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> VectorType;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
 
   ODEScheme(const MatrixType &aij_, const MatrixType &gij_,
             const MatrixType &cij_, const VectorType &bi_,
             const VectorType &ci_, const VectorType &di_, const VectorType &ei_,
-            Scalar gamma_, const vector<bool> _cf, Index nStage_, Index nOrder_)
+            Scalar gamma_, const vector<int> _cf, Index nStage_, Index nOrder_)
       : aij(aij_), gij(gij_), cij(cij_), bi(bi_), ci(ci_), di(di_), ei(ei_),
         gamma(gamma_), cf(_cf), nStage(nStage_), nOrder(nOrder_) {}
 
@@ -38,7 +37,7 @@ class ODEScheme {
   const VectorType di;
   const VectorType ei;
   const Scalar gamma;
-  const vector<bool> cf;
+  const vector<int> cf;
   const Index nStage;
   const Index nOrder;
 
@@ -72,9 +71,9 @@ class ODEScheme {
 template<typename Scalar = double>
 class ODESchemeFactory {
  public:
-  typedef DenseIndex Index;
-  typedef Matrix<Scalar, Dynamic, 1> VectorType;
-  typedef Matrix<Scalar, Dynamic, Dynamic> MatrixType;
+  typedef Eigen::DenseIndex Index;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> VectorType;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
   // Factory Method
   static unique_ptr<ODEScheme<Scalar> > make_ODEScheme(ODESchemeType choice);
 };
@@ -90,7 +89,7 @@ ODESchemeFactory<Scalar>::make_ODEScheme(ODESchemeType choice) {
   VectorType di;
   VectorType ei;
   Scalar gamma;
-  vector<bool> cf;
+  vector<int> cf;
   Index nStage;
   Index nOrder;
 

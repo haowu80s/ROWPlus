@@ -9,6 +9,7 @@
 using namespace Eigen;
 using namespace ROWPlus;
 using namespace boost::numeric::odeint;
+using namespace std;
 
 int main() {
   const double aTol = 1.0e-12;
@@ -29,8 +30,6 @@ int main() {
   opts.TypeScheme = ROK4L;
   opts.iUserJac = false;
   opts.maxKryDim = 4;
-  opts.minKryDim = 4;
-  opts.maxJacReuse = 0;
   opts.maxSteps = 1000000;
 
   ODESolver<ROWPlus::ODEJacSAP<lorenz96>, lorenz96> solver(&fun, opts);

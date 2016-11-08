@@ -1,6 +1,7 @@
-
 #ifndef ROWMAPLUS_H
 #define ROWMAPLUS_H
+
+#include "ROWPlus/Stepper/Stepper.h"
 
 #include "ROWPlus/Core/ODEUtility.h"
 #include "ROWPlus/Core/ODEJac.h"

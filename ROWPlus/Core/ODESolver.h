@@ -36,7 +36,6 @@
  */
 
 namespace ROWPlus {
-using namespace Eigen;
 
 template<typename JacType, typename FunctorType, typename Scalar = double>
 class ODESolver {
@@ -46,7 +45,7 @@ class ODESolver {
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
 
   ODESolver(FunctorType *_functor,
-            ODEOptions <Scalar> &_opt = ODEOptions<Scalar>())
+            ODEOptions<Scalar> &_opt = ODEOptions<Scalar>())
       : opt(_opt), functor(_functor),
         scheme(ODESchemeFactory<Scalar>::make_ODEScheme(opt.TypeScheme)),
         jac(_functor, _opt) {
@@ -56,16 +55,16 @@ class ODESolver {
   ROWPlusSolverSpace::Status step(VectorType &u, Scalar start_time,
                                   const Scalar end_time);
 
-  const ODEStat <Scalar> &getStats() const { return stat; }
+  const ODEStat<Scalar> &getStats() const { return stat; }
 
   void setInitStepSize(const Scalar step) { opt.h_init = step; }
 
  private:
   FunctorType *functor;
-  ODEOptions <Scalar> &opt;
-  std::unique_ptr<ODEScheme < Scalar>> scheme;
+  ODEOptions<Scalar> &opt;
+  std::unique_ptr<ODEScheme<Scalar>> scheme;
   JacType jac;
-  ODEStat <Scalar> stat;
+  ODEStat<Scalar> stat;
   Index neq;
   VectorType fm, fdt, scal, rhs, uu, fu0, wa;
   MatrixType km;
@@ -92,7 +91,6 @@ ODESolver<JacType, FunctorType, Scalar>::step(VectorType &u,
   eigen_assert(u.size() == neq);
   // clear stats
   stat.clear();
-  jac.initJacReuse();
   // update options for Jac
   jac.updateOptions(opt);
   // local variables
@@ -111,7 +109,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(VectorType &u,
   } else {
     hs = opt.h_init;
   }
-  hs = min(hs, opt.h_max);
+  hs = std::min(hs, opt.h_max);
   // evaluate rhs at the beginning
   if (evalF(t, u, fm) < 0) return ROWPlusSolverSpace::UserAsked;
 
@@ -207,11 +205,12 @@ ODESolver<JacType, FunctorType, Scalar>::step(VectorType &u,
     // Error estimate, step size control.
     errs = fu0.cwiseProduct(scal).stableNorm();
     errs /= sqrt_neq;
-    hnew = min(hs * min(opt.stepControl[1],
-                        max(opt.stepControl[0], scheme->proot(1.0 / errs) *
-                            scheme->pproot(errold) *
-                            opt.stepControl[2])),
-               opt.h_max);
+    hnew = std::min(hs * std::min(opt.stepControl[1],
+                                  std::max(opt.stepControl[0],
+                                           scheme->proot(1.0 / errs) *
+                                               scheme->pproot(errold) *
+                                               opt.stepControl[2])),
+                    opt.h_max);
     if (hnew < opt.h_min) {
       return ROWPlusSolverSpace::StepSizeTooSmall;
     }

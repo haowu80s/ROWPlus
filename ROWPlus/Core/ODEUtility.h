@@ -12,23 +12,22 @@
 #include <iostream>
 
 namespace ROWPlus {
-using namespace Eigen;
-using namespace std;
 
 // Generic functor
 // for the evaluation of f(t, u), f_u(t, u), f_t(t, U), etc.
-template<typename _Scalar, DenseIndex NX = Dynamic, DenseIndex NY = Dynamic>
+template<typename _Scalar, Eigen::DenseIndex NX = Eigen::Dynamic, Eigen::DenseIndex NY = Eigen::Dynamic>
 struct BaseFunctor {
   typedef _Scalar Scalar;
   enum { InputsAtCompileTime = NX, ValuesAtCompileTime = NY };
-  typedef Matrix<Scalar, InputsAtCompileTime, 1> InputType;
-  typedef Matrix<Scalar, ValuesAtCompileTime, 1> ValueType;
-  typedef Matrix<Scalar, ValuesAtCompileTime, InputsAtCompileTime> JacobianType;
+  typedef Eigen::Matrix<Scalar, InputsAtCompileTime, 1> InputType;
+  typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, 1> ValueType;
+  typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, InputsAtCompileTime>
+      JacobianType;
 
   BaseFunctor() {}
 
-  DenseIndex inputs() const { return InputsAtCompileTime; }
-  DenseIndex values() const { return ValuesAtCompileTime; }
+  Eigen::DenseIndex inputs() const { return InputsAtCompileTime; }
+  Eigen::DenseIndex values() const { return ValuesAtCompileTime; }
 
   // you should define that in the subclass :
   // void operator() (const InputType& x, ValueType* v);
@@ -60,21 +59,19 @@ enum ODEJacType {
   ZRO = 0, // Zero matrix (=== explict method)
   EXA = 1, // Exact Jacobian (=== standard Rosenbrock)
   SAP = 2, // Single Arnoldi process
-  RAP = 3  // Jacobian-Reuse Arnoldi process
 };
 
 template<typename Scalar = double>
 struct ODEOptions {
-  typedef DenseIndex Index;
+  typedef Eigen::DenseIndex Index;
   ODEOptions()
       : TypeScheme(GRK4T), relTol(1e-4),
-        absTol(sqrt(NumTraits<Scalar>::epsilon())), h_init(0.0),
-        h_min(NumTraits<Scalar>::epsilon()),
-        h_max(NumTraits<Scalar>::highest()), maxSteps(100000), iAuto(true),
+        absTol(sqrt(Eigen::NumTraits<Scalar>::epsilon())), h_init(0.0),
+        h_min(Eigen::NumTraits<Scalar>::epsilon()),
+        h_max(Eigen::NumTraits<Scalar>::highest()), maxSteps(100000), iAuto(true),
         iUserJac(false), iUserFt(false), iUserAskedKill(false),
         stepControl{0.25, 4.0, 0.8}, epsfcn(Scalar(0.)),
-        epsmch(NumTraits<Scalar>::epsilon()), kryTol(1e-3), maxKryDim(4),
-        minKryDim(4), maxJacReuse(0){}
+        epsmch(Eigen::NumTraits<Scalar>::epsilon()), kryTol(1e-3), maxKryDim(4) {}
   ODESchemeType TypeScheme;
   Scalar relTol;
   Scalar absTol;
@@ -93,9 +90,6 @@ struct ODEOptions {
   // options for krylov type
   Scalar kryTol;
   Index maxKryDim;
-  Index minKryDim;
-  // options for Jacobian reuse
-  Index maxJacReuse;
 };
 
 template<typename Scalar = double>
@@ -112,6 +106,8 @@ struct ODEStat {
       njacv;     // Number of Jacobian-times-vector products.
   Scalar lasths; // Latest time step size.
   void print() const {
+    using std::cout;
+    using std::endl;
     cout << "====================" << endl;
     cout << "|| nsteps  = " << nsteps << endl;
     cout << "|| nstepsr = " << nstepsr << endl;
@@ -131,39 +127,6 @@ struct ODEStat {
     njacv = 0;
     lasths = -1.0;
   }
-};
-
-template<typename Scalar = double>
-class ODERecord {
- public:
-  typedef DenseIndex Index;
-  typedef Matrix<Scalar, Dynamic, 1> VectorType;
-  typedef Matrix<Scalar, Dynamic, Dynamic> MatrixType;
-
-  void addSol(const Scalar t, const VectorType &u) {
-    vector <Scalar> uVec(u.data(), u.data() + u.size());
-    tRecords.push_back(t);
-    uRec.push_back(uVec);
-  }
-
-  void writeRec(const string &fileName) {
-    Index nRec = tRecords.size();
-    ofstream file(fileName);
-    if (file.is_open()) {
-      for (size_t i = 0; i < nRec; i++) {
-        file << tRecords[i] << " ";
-        for (auto it = uRec[i].begin(); it != uRec[i].end(); it++) {
-          file << *it << " ";
-        }
-        file << "\n";
-      }
-    }
-    file.close();
-  }
-
- private:
-  vector<Scalar> tRecords;
-  vector<vector<Scalar> > uRec;
 };
 
 namespace ROWPlusSolverSpace {
