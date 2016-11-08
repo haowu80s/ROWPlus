@@ -67,13 +67,21 @@ else()
 endif()
 
 #############################################################################
-# find how to Eigen3
+# find Eigen3
 #############################################################################
 find_package(Eigen3)
 if(NOT EIGEN3_FOUND)
   message(FATAL_ERROR
       "Can't link to the Eigen3 library. Plesae specify ENV EIGEN3_ROOT.")
 endif()
+
+#############################################################################
+# find Boost
+#############################################################################
+FIND_PACKAGE(Boost COMPONENTS timer REQUIRED)
+IF (NOT Boost_FOUND)
+  MESSAGE("Could not find the required C++ Boost libraries")
+ENDIF (NOT Boost_FOUND)
 
 #############################################################################
 # compiler flags
