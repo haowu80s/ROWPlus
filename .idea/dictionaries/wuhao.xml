@@ -2,6 +2,10 @@
   <dictionary name="wuhao">
     <words>
       <w>eigen</w>
+      <w>krylov</w>
+      <w>kutta</w>
+      <w>rosenbrock</w>
+      <w>runge</w>
     </words>
   </dictionary>
 </component>

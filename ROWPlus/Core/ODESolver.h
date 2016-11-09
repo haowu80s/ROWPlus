@@ -52,7 +52,8 @@ class ODESolver {
     resizeWA();
   }
 
-  ROWPlusSolverSpace::Status step(VectorType &u, Scalar start_time,
+  ROWPlusSolverSpace::Status step(Eigen::Ref<VectorType> u,
+                                  Scalar start_time,
                                   const Scalar end_time);
 
   const ODEStat<Scalar> &getStats() const { return stat; }
@@ -85,7 +86,7 @@ class ODESolver {
 
 template<typename JacType, typename FunctorType, typename Scalar>
 ROWPlusSolverSpace::Status
-ODESolver<JacType, FunctorType, Scalar>::step(VectorType &u,
+ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
                                               Scalar t, const Scalar end_time) {
   // verify the size of input solution vector
   eigen_assert(u.size() == neq);
