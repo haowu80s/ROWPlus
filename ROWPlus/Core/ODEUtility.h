@@ -46,7 +46,7 @@ enum ODESchemeType {
   LSTAB = 4, // (L-stable method)    see [4], page 110
   GRK4A = 5, // (Kaps-Rentrop 79)    see [4], page 110
   ROK4A = 6, // (Rosenbrock-Krylov, Tranquilli and Sandu (2014))
-  ROK4L = 7, // (Improved Rosenbrock-Krylov)
+  ROK4E = 7, // (Improved Rosenbrock-Krylov)
   RKDP = 8,  // (Dormand & Prince 1980)
   RK23 = 9,  // (Bogacki–Shampine 1989, same as ode23 in MATLAB)
   ZED34 = 10 // (H. Zedan 1989)

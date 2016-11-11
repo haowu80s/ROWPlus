@@ -99,5 +99,9 @@ endmacro(rp_add_cxx_compiler_flag)
 rp_add_cxx_compiler_flag("-std=c++11")
 
 #############################################################################
-add_subdirectory(ROWPlus)
-add_subdirectory(examples)
+add_subdirectory(examples/Lorenz_96)
+# Add chemistry examples
+OPTION(${PROJECT_NAME}_ExpChemistry "Compile examples of chemical systems." ON)
+IF(${PROJECT_NAME}_ExpChemistry)
+  add_subdirectory(examples/ChemicalSystems)
+ENDIF (${PROJECT_NAME}_ExpChemistry)

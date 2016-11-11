@@ -16,8 +16,7 @@ class stepper {
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> VectorType;
   typedef std::unique_ptr<ODESolver<JacType, FunctorType>> SolverPtr;
   void makeAdaptiveStepper(FunctorType *_func,
-                           const Scalar rel_error,
-                           const Scalar abs_error = 0.0) {
+                           Scalar rel_error, Scalar abs_error = 0.0) {
     if (abs_error == 0.0)
       abs_error = Eigen::NumTraits<Scalar>::epsilon() * 10.0;
     assert(rel_error > 0.0 && abs_error > 0.0);
@@ -32,14 +31,14 @@ class stepper {
         SolverPtr(new ODESolver<JacType, FunctorType>(_func, this->options));
   };
   void makeConstantStepper(FunctorType *_func) {
-    this->options.relTol = 1.0;
+    this->options.relTol = 0.0;
     this->options.absTol = std::sqrt(Eigen::NumTraits<Scalar>::highest());
     this->options.h_max = Eigen::NumTraits<Scalar>::highest();
-    this->options.h_min = Eigen::NumTraits<Scalar>::epsilon();
+    this->options.h_min = 0.0;
     this->options.stepControl[0] = 1.0;
     this->options.stepControl[1] = 1.0;
     this->options.stepControl[2] = 1.0;
-    this->options.iUserAskedKill = true;
+    this->options.iUserAskedKill = false;
     this->solver =
         SolverPtr(new ODESolver<JacType, FunctorType>(_func, this->options));
   }
@@ -66,13 +65,13 @@ class rosenbrock_krylov4 : public stepper<rosenbrock_krylov4<Scalar>,
  public:
   rosenbrock_krylov4(const Eigen::DenseIndex _k = 4) {
     assert(_k >= 4);
-    this->options.TypeScheme = ROK4L;
+    this->options.TypeScheme = ROK4E;
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;
     this->options.iAuto = false;
     this->options.maxKryDim = _k;
-    this->options.maxSteps = std::numeric_limits<int>::max();
+    this->options.maxSteps = 100000;
   };
 };
 
@@ -83,7 +82,7 @@ class rosenbrock4 : public stepper<rosenbrock4<Scalar>,
                                    Scalar> {
  public:
   rosenbrock4() {
-    this->options.TypeScheme = GRK4A;
+    this->options.TypeScheme = GRK4T;
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;

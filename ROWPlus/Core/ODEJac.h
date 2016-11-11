@@ -65,7 +65,7 @@ class ODEJac {
   Scalar arnTol;
 
   Index fdjac(FunctorType &Functor, Scalar t,
-              const Eigen::Ref<const VectorType> x,
+              Eigen::Ref<VectorType> x,
               const Eigen::Ref<const VectorType> fvec,
               Eigen::Ref<MatrixType> fjac,
               Index ml,
@@ -84,7 +84,7 @@ class ODEJac {
 template<class T, typename FunctorType, typename Scalar>
 Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjac(FunctorType &Functor,
                                                         Scalar t,
-                                                        const Eigen::Ref<const VectorType> x,
+                                                        Eigen::Ref<VectorType> x,
                                                         const Eigen::Ref<const VectorType> fvec,
                                                         Eigen::Ref<MatrixType> fjac,
                                                         Eigen::DenseIndex ml,
@@ -120,7 +120,7 @@ Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjac(FunctorType &Functor,
       if (h == 0.)
         h = eps;
       x[j] = temp + h;
-      iflag = Functor(t, x, wa1);
+      iflag = Functor.f(t, x, wa1);
       if (iflag < 0)
         return iflag;
       x[j] = temp;
@@ -138,7 +138,7 @@ Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjac(FunctorType &Functor,
           h = eps;
         x[j] = wb1[j] + h;
       }
-      iflag = Functor(t, x, wa1);
+      iflag = Functor.f(t, x, wa1);
       if (iflag < 0)
         return iflag;
       for (j = k; (msum < 0) ? (j > n) : (j < n); j += msum) {
@@ -198,7 +198,8 @@ class ODEJacZRO
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
 
   ODEJacZRO(FunctorType *_functor, const ODEOptions <Scalar> &_opt)
-      : ODEJac<ODEJacZRO<FunctorType, Scalar>, FunctorType, Scalar>(ZRO, _opt) {
+      : ODEJac<ODEJacZRO<FunctorType, Scalar>, FunctorType, Scalar>(_functor,
+                                                                    ZRO, _opt) {
   }
 
   Index initIMPL(Scalar t,
@@ -244,22 +245,16 @@ class ODEJacEXA
                  bool rejected = false) {
     ehg = _ehg;
     Index nret = 0;
-    if (!rejected && this->nJacReuse >= this->maxJacReuse) {
-      this->nJacReuse = 0;
-      // obtain the Jacobian matrix
-      if (!this->iUserJac) {
-        if (fdjac(*this->functor, t, u, f, J,
-                  this->neq - 1, this->neq - 1, this->epsfcn) < 0)
-          return -1;
-        nret = this->neq;
-      } else {
-        if (this->functor->df(t, u, J) < 0)
-          return -1;
-        nret = 1;
-      }
+    // obtain the Jacobian matrix
+    if (!this->iUserJac) {
+      if (this->fdjac(*this->functor, t, u, f, J,
+                this->neq - 1, this->neq - 1, this->epsfcn) < 0)
+        return -1;
+      nret = this->neq;
     } else {
-      if (!rejected)
-        this->nJacReuse++;
+      if (this->functor->df(t, u, J) < 0)
+        return -1;
+      nret = 1;
     }
     // M = ehg*I - J
     MatrixType M = -J;
