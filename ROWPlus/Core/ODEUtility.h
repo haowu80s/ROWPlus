@@ -59,6 +59,7 @@ enum ODEJacType {
   ZRO = 0, // Zero matrix (=== explict method)
   EXA = 1, // Exact Jacobian (=== standard Rosenbrock)
   SAP = 2, // Single Arnoldi process
+  HAP = 3, // Single Arnoldi process
 };
 
 template<typename Scalar = double>

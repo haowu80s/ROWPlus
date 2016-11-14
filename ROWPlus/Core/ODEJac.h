@@ -414,6 +414,136 @@ class ODEJacSAP
   }
 };
 
+template<typename FunctorType, typename Scalar = double>
+class ODEJacHAP
+    : public ODEJac<ODEJacHAP<FunctorType, Scalar>, FunctorType, Scalar> {
+ public:
+  typedef Eigen::DenseIndex Index;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> VectorType;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixType;
+  typedef Eigen::DiagonalMatrix<Scalar, Eigen::Dynamic> DiagType;
+
+  ODEJacHAP(FunctorType *_functor, const ODEOptions <Scalar> &_opt)
+      : ODEJac<ODEJacHAP<FunctorType, Scalar>, FunctorType, Scalar>
+            (_functor, HAP, _opt),
+        mk(_opt.maxKryDim),
+        MLU(Eigen::PartialPivLU<MatrixType>(this->maxKryDim)) {
+    eigen_assert(this->neq == this->functor->values());
+    resizeWork();
+  }
+
+  Index initIMPL(Scalar t,
+                 Eigen::Ref<VectorType> u,
+                 Eigen::Ref<VectorType> f,
+                 Scalar _ehg,
+                 bool rejected = false) {
+    resizeWork();
+    ehg = _ehg;
+    Index nret = 0;
+    // obtain the krylov approx. to Jacobian matrix
+    if (!rejected) nret = arnoldi(t, u, f);
+    MatrixType M = -H.topLeftCorner(mk, mk);
+    M.diagonal() += VectorType::Constant(mk, ehg);
+    // LU factorization
+    MLU.compute(M);
+    return nret;
+  }
+
+  Index stageIMPL(Index s,
+                  const Eigen::Ref<const VectorType> b,
+                  Eigen::Ref<VectorType> x) {
+    // (ehg*I - J) x = b
+    if (mk != this->maxKryDim) {
+      wb1.resize(mk);
+      wb2.resize(mk);
+    }
+    wb1.noalias() = Q.leftCols(mk).transpose() * b;
+    wb2 = MLU.solve(wb1);
+    wb1 /= ehg;
+    wb2 -= wb1;
+    wa1.noalias() = Q.leftCols(mk) * wb2;
+    wa2 = b;
+    wa2 /= ehg;
+    x = wa2 + wa1;
+    return 0;
+  };
+
+ private:
+  Index mk;
+  Scalar arnTol;
+  VectorType wa1, wb1, wb2, wa2;
+  MatrixType H;
+  MatrixType Q;
+  MatrixType J;
+  Eigen::PartialPivLU <MatrixType> MLU;
+  Scalar ehg;
+
+  void resizeWork() {
+    if (!this->iReSize) return;
+    this->iReSize = false;
+    this->neq = this->functor->inputs();
+    eigen_assert(this->neq == this->functor->values());
+
+    // resize everything
+    wa1.resize(this->neq);
+    wa2.resize(this->neq);
+    wb1.resize(this->maxKryDim);
+    wb2.resize(this->maxKryDim);
+    H.resize(this->maxKryDim + 1, this->maxKryDim);
+    Q.resize(this->neq, this->maxKryDim + 1);
+    H.setZero();
+    Q.setZero();
+    if (this->iUserJac) {
+      J.resize(this->neq, this->neq);
+      J.setZero();
+    }
+  }
+
+  Index arnoldi(Scalar t, Eigen::Ref<VectorType> u, Eigen::Ref<VectorType> f) {
+    Index nret = 0;
+    Scalar eta = 1.0e4;
+    Scalar tau, rho;
+    Scalar beta = f.blueNorm();
+    Q.col(0) = f;
+    Q.col(0) /= beta;
+    if (this->iUserJac) {
+      if (this->functor->df(t, u, J) < 0)
+        return -1;
+      nret++;
+    }
+    for (Index i = 0; i < this->maxKryDim; i++) {
+      wa1 = Q.col(i);
+      if (!this->iUserJac) {
+        if (this->fdjacv(*this->functor, t, u, f, wa1, wa2, this->epsfcn) < 0)
+          return -1;
+        nret++;
+      } else {
+        wa2 = J * wa1;
+      }
+      tau = wa2.blueNorm();
+      for (Index j = 0; j < i + 1; j++) {
+        H(j, i) = wa2.dot(Q.col(j));
+        wa2 -= H(j, i) * Q.col(j);
+      }
+      if (wa2.blueNorm() <= eta * tau) {
+        for (Index j = 0; j < i + 1; j++) {
+          rho = wa2.dot(Q.col(j));
+          wa2 -= rho * Q.col(j);
+          H(j, i) += rho;
+        }
+      }
+      H(i + 1, i) = wa2.blueNorm();
+      Q.col(i + 1) = wa2 / H(i + 1, i);
+      if (H(i + 1, i) <= this->arnTol * tau) {
+        mk = i + 1;
+        return nret;
+      }
+    }
+    mk = this->maxKryDim;
+    return nret;
+  }
+};
+
 }
 
 #endif

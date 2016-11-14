@@ -28,6 +28,12 @@ int RxnFunctor::f(double t,
   return evalEqsConstVol(x, fvec);
 }
 
+int RxnFunctor::dfd(double t,
+                    const Eigen::Ref<const Eigen::VectorXd> x,
+                    Eigen::Ref<Eigen::VectorXd> jvec) {
+  return evalEqsConstVolDiagJac(x, jvec);
+}
+
 int RxnFunctor::evalEqsConstVol(const Ref<const Eigen::VectorXd> x,
                                 Ref<Eigen::VectorXd> fvec) {
   // The components of y are [0] the temperature,
@@ -43,9 +49,34 @@ int RxnFunctor::evalEqsConstVol(const Ref<const Eigen::VectorXd> x,
     m_gas.getNetProductionRates(m_wa2.data()); // "omega dot"
     // convert to [(kg/kg)/s]
     fvec.tail(m_nsp) =
-        m_wa2.cwiseProduct(Map<const VectorXd>(mw.data(), mw.size())) / m_gas.density();
+        m_wa2.cwiseProduct(Map<const VectorXd>(mw.data(), mw.size()))
+            / m_gas.density();
     // compute dT/dt [K/s]
     fvec(0) = -m_wa2.dot(m_wa1) / m_gas.density() / m_gas.cv_mass();
+    return 0;
+  }
+  catch (...) { return -1; }
+}
+
+int RxnFunctor::evalEqsConstVolDiagJac(const Eigen::Ref<const Eigen::VectorXd> x,
+                                       Eigen::Ref<Eigen::VectorXd> jvec) {
+  try {
+
+    // update state
+    m_gas.setState_TRY(x[0], m_gas.density(), x.data() + 1);
+    // fetch molecular weights [kg/kmol]
+    const Cantera::vector_fp &mw = m_gas.molecularWeights();
+    // compute net production rates [kmol/m^3/s]
+    m_gas.getDestructionRates(m_wa2.data());
+    // convert to [(kg/kg)/s]
+    jvec.tail(m_nsp) =
+        -m_wa2.cwiseProduct(Map<const VectorXd>(mw.data(), mw.size()))
+            / m_gas.density();
+
+    jvec.tail(m_nsp).array() /= (x.tail(m_nsp).array() +
+        100.0 * Eigen::NumTraits<double>::epsilon());
+    jvec[0] = 0;
+    jvec.array() -= 1.0;
     return 0;
   }
   catch (...) { return -1; }

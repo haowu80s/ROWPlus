@@ -24,8 +24,8 @@ class stepper {
     this->options.absTol = abs_error;
     this->options.h_max = Eigen::NumTraits<Scalar>::highest();
     this->options.h_min = Eigen::NumTraits<Scalar>::epsilon();
-    this->options.stepControl[0] = 0.2;
-    this->options.stepControl[1] = 5.0;
+    this->options.stepControl[0] = 0.25;
+    this->options.stepControl[1] = 4.0;
     this->options.stepControl[2] = 0.8;
     this->solver =
         SolverPtr(new ODESolver<JacType, FunctorType>(_func, this->options));
@@ -71,7 +71,8 @@ class rosenbrock_krylov4 : public stepper<rosenbrock_krylov4<Scalar>,
     this->options.iUserAskedKill = false;
     this->options.iAuto = false;
     this->options.maxKryDim = _k;
-    this->options.maxSteps = 100000;
+    this->options.kryTol = std::sqrt(Eigen::NumTraits<Scalar>::epsilon());
+    this->options.maxSteps = std::numeric_limits<int>::max();
   };
 };
 

@@ -35,10 +35,14 @@ class RxnFunctor {
     return -1;
   }
 
+  int dfd(double t,
+          const Eigen::Ref<const Eigen::VectorXd> x,
+          Eigen::Ref<Eigen::VectorXd> v);
+
   void checkBound(bool _check) { m_check_bnd = _check; }
 
-  Eigen::DenseIndex values() const { return m_nsp+1; }
-  Eigen::DenseIndex inputs() const { return m_nsp+1; }
+  Eigen::DenseIndex values() const { return m_nsp + 1; }
+  Eigen::DenseIndex inputs() const { return m_nsp + 1; }
  private:
   Cantera::IdealGasMix m_gas;
   const size_t m_nsp;
@@ -47,6 +51,9 @@ class RxnFunctor {
 
   int evalEqsConstVol(const Eigen::Ref<const Eigen::VectorXd> x,
                       Eigen::Ref<Eigen::VectorXd> v);
+
+  int evalEqsConstVolDiagJac(const Eigen::Ref<const Eigen::VectorXd> x,
+                             Eigen::Ref<Eigen::VectorXd> v);
 };
 
 #endif //ROWPLUS_RXNFUNCTOR_H

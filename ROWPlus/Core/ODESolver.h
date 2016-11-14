@@ -212,10 +212,11 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
                                                scheme->pproot(errold) *
                                                opt.stepControl[2])),
                     opt.h_max);
-    if (hnew < opt.h_min) {
+    if (hnew < opt.h_min && end_time > opt.h_min) {
       return ROWPlusSolverSpace::StepSizeTooSmall;
     }
     if (errs < 1.0) { // Step is accepted.
+//      std::cout << t << " " << hs << std::endl;
       told = t;
       t += hs;
       u = uu;
