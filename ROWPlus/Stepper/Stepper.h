@@ -26,7 +26,7 @@ class stepper {
     this->options.h_min = Eigen::NumTraits<Scalar>::epsilon();
     this->options.stepControl[0] = 0.25;
     this->options.stepControl[1] = 4.00;
-    this->options.stepControl[2] = 0.75;
+    this->options.stepControl[2] = 0.70;
     this->solver =
         SolverPtr(new ODESolver<JacType, FunctorType>(_func, this->options));
   };
