@@ -294,7 +294,7 @@ int ODESolver<JacType, FunctorType, Scalar>::evalF
 
 template<typename JacType, typename FunctorType, typename Scalar>
 void ODESolver<JacType, FunctorType, Scalar>::resizeWA() {
-  neq = functor->inputs();
+  neq = functor->values();
   eigen_assert(neq == functor->values());
 
   // resize everything

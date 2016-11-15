@@ -23,7 +23,7 @@ class ODEJac {
          const ODEOptions <Scalar> &_opt)
       : functor(_functor),
         typeName(_tyepName),
-        neq(functor->inputs()),
+        neq(functor->values()),
         iUserJac(_opt.iUserJac),
         maxKryDim(_opt.maxKryDim),
         epsfcn(_opt.epsfcn),
@@ -278,7 +278,7 @@ class ODEJacEXA
   Scalar ehg;
 
   void resizeWork() {
-    this->neq = this->functor->inputs();
+    this->neq = this->functor->values();
     eigen_assert(this->neq == this->functor->values());
     // resize everything
     J.resize(this->neq, this->neq);
@@ -351,7 +351,7 @@ class ODEJacSAP
   void resizeWork() {
     if (!this->iReSize) return;
     this->iReSize = false;
-    this->neq = this->functor->inputs();
+    this->neq = this->functor->values();
     eigen_assert(this->neq == this->functor->values());
 
     // resize everything
@@ -481,7 +481,7 @@ class ODEJacHAP
   void resizeWork() {
     if (!this->iReSize) return;
     this->iReSize = false;
-    this->neq = this->functor->inputs();
+    this->neq = this->functor->values();
     eigen_assert(this->neq == this->functor->values());
 
     // resize everything
