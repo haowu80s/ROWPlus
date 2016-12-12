@@ -136,25 +136,19 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     scal.noalias() = scal.cwiseInverse();
     // evaluate f(u0)
     if (!rejected && !first && scheme->cf[0])
-      if ((failed = (evalF(t, u, fm) < 0))) {
-        if (opt.iUserAskedKill) return ROWPlusSolverSpace::UserAsked;
-        else continue;
-      }
+      if ((failed = (evalF(t, u, fm) < 0)))
+        return ROWPlusSolverSpace::UserAsked;
     // initialize ehg*I-J
     ehg = 1.0 / (scheme->gamma * hs);
     nret = jac.init(t, u, fm, ehg, rejected);
-    if ((failed = (nret < 0))) {
-      if (opt.iUserAskedKill) return ROWPlusSolverSpace::UserAsked;
-      else continue;
+    if ((failed = (nret < 0))) return ROWPlusSolverSpace::UserAsked;
     }
     if (opt.iUserJac) stat.njac += nret;
     else stat.nfeval += nret;
     // Compute the derivative f_t in the nonautonomous case.
     if (!opt.iAuto)
-      if ((failed = (evalFt(t, u, fm, fdt) < 0))) {
-        if (opt.iUserAskedKill) return ROWPlusSolverSpace::UserAsked;
-        else continue;
-      }
+      if ((failed = (evalFt(t, u, fm, fdt) < 0)))
+        return ROWPlusSolverSpace::UserAsked;
     // Loop over stages
     // 1st stage
     rhs = fm;
