@@ -116,6 +116,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
 
   // begin integration, loop for successful steps:
   while (true) {
+    // std::cout << t << " " << hs << std::endl;
     // handle previous failure first
     if (failed) {
       stat.nstepsr++;
@@ -127,7 +128,8 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     // reached
     if (t >= end_time || reached) break;
     // too many steps
-    if (stat.nsteps > opt.maxSteps) return ROWPlusSolverSpace::TooManySteps;
+    if (stat.nstepsr > opt.maxSteps || stat.nsteps > opt.maxSteps)
+      return ROWPlusSolverSpace::TooManySteps;
     // adjust step size if close to end_time
     if ((reached = (t + hs >= end_time))) hs = end_time - t;
     scal = u.array() * opt.relTol + opt.absTol;
@@ -216,7 +218,6 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
       return ROWPlusSolverSpace::StepSizeTooSmall;
     }
     if (errs < 1.0) { // Step is accepted.
-//      std::cout << t << " " << hs << std::endl;
       told = t;
       t += hs;
       u = uu;

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="60d56ddd-c430-4a53-8f6c-9aa26ca1cc6c" name="PLEI_HOME" url="http://localhost">
+        <fileTransfer port="0" mountedRoot="$USER_HOME$/PLEIADES_HOME/Code/ROWPlus" accessType="MOUNT" />
+      </webServer>
+    </option>
+  </component>
+</project>
