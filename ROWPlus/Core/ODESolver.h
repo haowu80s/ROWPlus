@@ -116,7 +116,6 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
 
   // begin integration, loop for successful steps:
   while (true) {
-    // std::cout << t << " " << hs << std::endl;
     // handle previous failure first
     if (failed) {
       stat.nstepsr++;
