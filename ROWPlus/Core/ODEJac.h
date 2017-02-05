@@ -177,7 +177,8 @@ Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjacv(FunctorType &Functor,
   const Scalar epsmch = NumTraits<Scalar>::epsilon();
   const Index n = x.size();
   eigen_assert(fvec.size() == n);
-  eps = sqrt((std::max)(epsfcn, epsmch)) / vvec.blueNorm() * sqrt((Scalar) n);
+  eps = sqrt((std::max)(epsfcn, epsmch)) /
+        (vvec.blueNorm() * sqrt((Scalar) n) + epsmch);
   Matrix<Scalar, Eigen::Dynamic, 1> wa1(n);
 
   wa1 = x + eps * vvec;
@@ -374,8 +375,11 @@ class ODEJacSAP
     Scalar eta = 1.0e4;
     Scalar tau, rho;
     Scalar beta = f.blueNorm();
-    Q.col(0) = f;
-    Q.col(0) /= beta;
+    if (beta < NumTraits<Scalar>::epsilon()) {
+      Q.col(0) = f;
+    } else {
+      Q.col(0) = f / beta;
+    }
     if (this->iUserJac) {
       if (this->functor->df(t, u, J) < 0)
         return -1;
@@ -403,7 +407,11 @@ class ODEJacSAP
         }
       }
       H(i + 1, i) = wa2.blueNorm();
-      Q.col(i + 1) = wa2 / H(i + 1, i);
+      if (H(i + 1, i) < NumTraits<Scalar>::epsilon()) {
+        Q.col(i + 1) = wa2;
+      } else {
+        Q.col(i + 1) = wa2 / H(i + 1, i);
+      }
       if (H(i + 1, i) <= this->arnTol * tau) {
         mk = i + 1;
         return nret;
@@ -504,8 +512,11 @@ class ODEJacHAP
     Scalar eta = 1.0e4;
     Scalar tau, rho;
     Scalar beta = f.blueNorm();
-    Q.col(0) = f;
-    Q.col(0) /= beta;
+    if (beta < NumTraits<Scalar>::epsilon()) {
+      Q.col(0) = f;
+    } else {
+      Q.col(0) = f / beta;
+    }
     if (this->iUserJac) {
       if (this->functor->df(t, u, J) < 0)
         return -1;
@@ -533,7 +544,11 @@ class ODEJacHAP
         }
       }
       H(i + 1, i) = wa2.blueNorm();
-      Q.col(i + 1) = wa2 / H(i + 1, i);
+      if (H(i + 1, i) < NumTraits<Scalar>::epsilon()) {
+        Q.col(i + 1) = wa2;
+      } else {
+        Q.col(i + 1) = wa2 / H(i + 1, i);
+      }
       if (H(i + 1, i) <= this->arnTol * tau) {
         mk = i + 1;
         return nret;
