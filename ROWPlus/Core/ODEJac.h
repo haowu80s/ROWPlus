@@ -313,7 +313,7 @@ class ODEJacSAP
     Index nret = 0;
     // obtain the krylov approx. to Jacobian matrix
     if (!rejected) nret = arnoldi(t, u, f);
-    MatrixType M = -H.topLeftCorner(mk, mk);
+    M = -H.topLeftCorner(mk, mk);
     M.diagonal() += VectorType::Constant(mk, ehg);
     // LU factorization
     MLU.compute(M);
@@ -346,6 +346,7 @@ class ODEJacSAP
   MatrixType H;
   MatrixType Q;
   MatrixType J;
+  MatrixType M;
   Eigen::PartialPivLU <MatrixType> MLU;
   Scalar ehg;
 

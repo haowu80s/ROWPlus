@@ -95,7 +95,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
   // update options for Jac
   jac.updateOptions(opt);
   // local variables
-  const Scalar sqrt_neq = sqrt((Scalar) neq);
+  const Scalar sqrt_neq = std::sqrt((Scalar) neq);
   bool reached = false, rejected = false, failed = false, first = true;
   Scalar unorm = 0.0;
   Scalar hs, hnew, ts, told;
@@ -229,7 +229,6 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
       rejected = true;
       reached = false;
       hs = hnew;
-      // jac.initJacReuse();
     }
   }
   return ROWPlusSolverSpace::ComputeSucessful;
