@@ -169,7 +169,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
         for (size_t j = 0; j < i; ++j)
           uu += (hs * scheme->aij(i - 1, j)) * km.col(j);
         ts = t + scheme->ci(i - 1) * hs;
-        if ((!first || i != 1) && (failed = (evalF(ts, uu, rhs) < 0))) {
+        if (i != 1 && (failed = (evalF(ts, uu, rhs) < 0))) {
           if (opt.iUserAskedKill) return ROWPlusSolverSpace::UserAsked;
           else break;
         }
@@ -204,7 +204,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     // Error estimate, step size control.
     errs = fu0.cwiseProduct(scal).stableNorm();
     errs /= sqrt_neq;
-    errs = max(errs, sqrt(NumTraits<Scalar>::epsilon()));
+    errs = std::max(errs, std::sqrt(Eigen::NumTraits<Scalar>::epsilon()));
     hnew = std::min(hs * std::min(opt.stepControl[1],
                                   std::max(opt.stepControl[0],
                                            scheme->proot(1.0 / errs) *
