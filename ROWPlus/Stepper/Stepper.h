@@ -69,7 +69,7 @@ class rosenbrock_krylov4 : public stepper<rosenbrock_krylov4<Scalar>,
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;
-    this->options.iAuto = false;
+    this->options.iAuto = true;
     this->options.maxKryDim = _k;
     this->options.kryTol = std::sqrt(Eigen::NumTraits<Scalar>::epsilon());
     this->options.maxSteps = std::numeric_limits<int>::max();
@@ -87,7 +87,7 @@ class rosenbrock4 : public stepper<rosenbrock4<Scalar>,
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;
-    this->options.iAuto = false;
+    this->options.iAuto = true;
     this->options.maxKryDim = 0;
     this->options.maxSteps = std::numeric_limits<int>::max();
   };
@@ -104,7 +104,7 @@ class runge_kutta_bosh3 : public stepper<runge_kutta_bosh3<Scalar>,
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;
-    this->options.iAuto = false;
+    this->options.iAuto = true;
     this->options.maxKryDim = 0;
     this->options.maxSteps = std::numeric_limits<int>::max();
   };
@@ -121,7 +121,7 @@ class runge_kutta_dopri5 : public stepper<runge_kutta_dopri5<Scalar>,
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;
-    this->options.iAuto = false;
+    this->options.iAuto = true;
     this->options.maxKryDim = 0;
     this->options.maxSteps = std::numeric_limits<int>::max();
   };
