@@ -58,9 +58,8 @@ int main(const int argc, const char *argv[]) {
   stepper_grk4t.makeConstantStepper(&fun);
   // creat solver: rosenbrock_krylov4 ROK4A
   rosenbrock_krylov4<RxnFunctor, double> stepper_rok4a(8);
-  auto _opts = stepper_rok4a.getOptions();
+  ODEOptions<double> _opts = stepper_rok4a.getOptions();
   _opts.TypeScheme = ROK4A;
-  stepper_rok4a.setOptions(_opts);
   stepper_rok4a.makeConstantStepper(&fun);
   // creat solver: rosenbrock_krylov4 ROK4E
   rosenbrock_krylov4<RxnFunctor, double> stepper_rok4e(8);

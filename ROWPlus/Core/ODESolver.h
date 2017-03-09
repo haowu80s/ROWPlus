@@ -204,7 +204,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     // Error estimate, step size control.
     errs = fu0.cwiseProduct(scal).stableNorm();
     errs /= sqrt_neq;
-    errs = max(errs, sqrt(NumTraits<Scalar>::epsilon()));
+    errs = std::max(errs, std::sqrt(Eigen::NumTraits<Scalar>::epsilon()));
     hnew = std::min(hs * std::min(opt.stepControl[1],
                                   std::max(opt.stepControl[0],
                                            scheme->proot(1.0 / errs) *
