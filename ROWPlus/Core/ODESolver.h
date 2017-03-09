@@ -269,7 +269,7 @@ int ODESolver<JacType, FunctorType, Scalar>::dfdt(FunctorType &Functor,
 }
 
 template<typename JacType, typename FunctorType, typename Scalar>
-int ODESolver<JacType, FunctorType, Scalar>::evalFt(Scalar t,
+inline int ODESolver<JacType, FunctorType, Scalar>::evalFt(Scalar t,
                                                     const Eigen::Ref<const VectorType> u,
                                                     const Eigen::Ref<const VectorType> f,
                                                     Eigen::Ref<VectorType> ft) {
@@ -283,7 +283,7 @@ int ODESolver<JacType, FunctorType, Scalar>::evalFt(Scalar t,
 };
 
 template<typename JacType, typename FunctorType, typename Scalar>
-int ODESolver<JacType, FunctorType, Scalar>::evalF
+inline int ODESolver<JacType, FunctorType, Scalar>::evalF
     (Scalar t, const Eigen::Ref<const VectorType> u, Eigen::Ref<VectorType> f) {
   stat.nfeval++;
   return functor->f(t, u, f);
