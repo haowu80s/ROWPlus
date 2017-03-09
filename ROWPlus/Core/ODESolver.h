@@ -169,7 +169,7 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
         for (size_t j = 0; j < i; ++j)
           uu += (hs * scheme->aij(i - 1, j)) * km.col(j);
         ts = t + scheme->ci(i - 1) * hs;
-        if ((!first || i != 1) && (failed = (evalF(ts, uu, rhs) < 0))) {
+        if ((failed = (evalF(ts, uu, rhs) < 0))) {
           if (opt.iUserAskedKill) return ROWPlusSolverSpace::UserAsked;
           else break;
         }
