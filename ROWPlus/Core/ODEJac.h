@@ -328,6 +328,13 @@ class ODEJacSAP
       wb1.resize(mk);
       wb2.resize(mk);
     }
+
+    // wb1= Q.leftCols(mk).transpose() * b;
+    // wb2 = MLU.solve(wb1);
+    // wb1 = Q.leftCols(mk) * wb2;
+    // wb1 /= -(ehg * ehg);
+    // x = (1.0 / ehg) * b + wb1;
+
     wb1.noalias() = Q.leftCols(mk).transpose() * b;
     wb2 = MLU.solve(wb1);
     wb1 /= ehg;
@@ -336,6 +343,7 @@ class ODEJacSAP
     wa2 = b;
     wa2 /= ehg;
     x = wa2 + wa1;
+
     return 0;
   };
 
