@@ -88,8 +88,6 @@ template<typename JacType, typename FunctorType, typename Scalar>
 ROWPlusSolverSpace::Status
 ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
                                               Scalar t, const Scalar end_time) {
-  // verify the size of input solution vector
-  eigen_assert(u.size() == neq);
   // clear stats
   stat.clear();
   // update options for Jac
@@ -205,12 +203,12 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     errs = fu0.cwiseProduct(scal).stableNorm();
     errs /= sqrt_neq;
     errs = std::max(errs, std::sqrt(Eigen::NumTraits<Scalar>::epsilon()));
-    hnew = std::min(hs * std::min(opt.stepControl[1],
-                                  std::max(opt.stepControl[0],
-                                           scheme->proot(1.0 / errs) *
-                                               scheme->pproot(errold) *
-                                               opt.stepControl[2])),
-                    opt.h_max);
+    hnew = opt.stepControl[2] * scheme->proot(1. / errs, 0.7) * scheme->proot
+        (errold, 0.6);
+    hnew =
+        std::min(hs * std::min(opt.stepControl[1],
+                               std::max(opt.stepControl[0], hnew)),
+                 opt.h_max);
     if (hnew < opt.h_min && end_time > opt.h_min) {
       return ROWPlusSolverSpace::StepSizeTooSmall;
     }

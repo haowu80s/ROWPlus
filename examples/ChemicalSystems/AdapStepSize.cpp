@@ -101,7 +101,7 @@ int main(const int argc, const char *argv[]) {
   // Generate reference solution
   CVode(cvode_mem, cvode_t1 = TIME1, cvode_y, &cvode_t, CV_NORMAL);
   assert(cvode_t == cvode_t1);
-  cout << "T_end = " << NV_Ith_S(cvode_y,0) << endl;
+  cout << "T_end_REF = " << NV_Ith_S(cvode_y,0) << endl;
   VectorXd y_ref = Map<const VectorXd>(NV_DATA_S(cvode_y), fun.inputs());
 
   // CVODE solution
@@ -110,97 +110,34 @@ int main(const int argc, const char *argv[]) {
   flag = CVodeSStolerances(cvode_mem, 1e-8, 1e-10);
   CVode(cvode_mem, cvode_t1 = TIME1, cvode_y, &cvode_t, CV_NORMAL);
   assert(cvode_t == cvode_t1);
-  cout << "T_end = " << NV_Ith_S(cvode_y,0) << endl;
+  cout << "CVODE : T_end = " << NV_Ith_S(cvode_y,0) << " ";
   VectorXd y_cvode = Map<const VectorXd>(NV_DATA_S(cvode_y), fun.inputs());
   y_cvode -= y_ref;
   y_cvode.array() /= (y_ref.array() + 1e-6);
-  cout << y_cvode.stableNorm() / sqrt(y_cvode.size()) << endl;
+  cout << "ERR = " << y_cvode.stableNorm() / sqrt(y_cvode.size()) << endl;
 
 
   VectorXd rowplus_y;
   double rowplus_hlast, rowplus_t;
   rosenbrock_krylov4<RxnFunctor, double> stepper_rok4e(4);
   initX(rowplus_y, gas);
-  stepper_rok4e.makeAdaptiveStepper(&fun, 1e-6, 1e-8);
+  stepper_rok4e.makeAdaptiveStepper(&fun, 1e-5, 1e-8);
   ROWPlusSolverSpace::Status ret = stepper_rok4e.step(rowplus_y, 0.0, TIME1,
                                                       1e-9);
   if (ret != ROWPlusSolverSpace::ComputeSucessful) {
     cout << "STAT = " << ret << endl;
     return 1;
   }
-  cout << "T_end = " << rowplus_y[0] << " " << rowplus_y.minCoeff() << endl;
+  cout << "ROK4E: T_end = " << rowplus_y[0] << " ";
   rowplus_y -= y_ref;
   rowplus_y.array() /= (y_ref.array() + 1e-6);
-  cout << rowplus_y.stableNorm() / sqrt(rowplus_y.size()) << endl;
+  cout << "ERR = " << rowplus_y.stableNorm() / sqrt(rowplus_y.size()) << endl;
+  cout << "NFEVAL = " << stepper_rok4e.getSolver()->getStats().nfeval << " "
+       << "NSTEPS = " << stepper_rok4e.getSolver()->getStats().nsteps << " "
+       << "NSTEPSR = " << stepper_rok4e.getSolver()->getStats().nstepsr << endl;
   /* Free y and abstol vectors */
   N_VDestroy_Serial(cvode_y);
   /* Free integrator memory */
   CVodeFree(&cvode_mem);
   return 0;
 };
-//  // initialize solution vectors
-//  RxnFunctor::state_type x_t1;
-//  VectorXd x_t2;
-//
-//  fun.checkBound(false);
-//  // creat solver: runge_kutta4_classic
-//  runge_kutta4_classic< RxnFunctor::state_type > stepper_rk4;
-//  // create solver: ROWPlus::rosenbrock4
-//  ROWPlus::rosenbrock4<RxnFunctor, double> stepper_grk4t;
-//  stepper_grk4t.makeConstantStepper(&fun);
-//  // creat solver: rosenbrock_krylov4 ROK4A
-//  rosenbrock_krylov4<RxnFunctor, double> stepper_rok4a(8);
-//  auto _opts = stepper_rok4a.getOptions();
-//  _opts.TypeScheme = ROK4A;
-//  stepper_rok4a.setOptions(_opts);
-//  stepper_rok4a.makeConstantStepper(&fun);
-//  // creat solver: rosenbrock_krylov4 ROK4E
-//  rosenbrock_krylov4<RxnFunctor, double> stepper_rok4e(8);
-//  stepper_rok4e.makeConstantStepper(&fun);
-//
-//  //
-//  double dt = 1e-4;
-//  while (dt >= 1e-7) {
-//    ROWPlusSolverSpace::Status ret;
-//    cout << dt << " ";
-//    // stepper_rk54
-//    initX(x_t1, gas);
-//    integrate_const( stepper_rk4 , fun , x_t1 , 0.0 , t1 , dt );
-//    Map<VectorXd>(x_t1.data(), x_t1.size()) -= Map<VectorXd>(x_ref.data(), x_ref.size());
-//    cout << Map<VectorXd>(x_t1.data(), x_t1.size()).stableNorm() /
-//        Map<VectorXd>(x_ref.data(), x_ref.size()).stableNorm() << " ";
-//    // stepper_grk4t
-//    initX(x_t2, gas);
-//    ret = stepper_grk4t.step(x_t2, 0.0, t1, dt);
-//    if (ret != ROWPlusSolverSpace::ComputeSucessful) {
-//      cout << "STAT = " << ret << endl;
-//      return 1;
-//    }
-//    x_t2 -= Map<VectorXd>(x_ref.data(), x_ref.size());
-//    cout << x_t2.stableNorm() /
-//        Map<VectorXd>(x_ref.data(), x_ref.size()).stableNorm() << " ";
-//    // stepper_rok4a
-//    initX(x_t2, gas);
-//    ret = stepper_rok4a.step(x_t2, 0.0, t1, dt);
-//    if (ret != ROWPlusSolverSpace::ComputeSucessful) {
-//      cout << "STAT = " << ret << endl;
-//      return 1;
-//    }
-//    x_t2 -= Map<VectorXd>(x_ref.data(), x_ref.size());
-//    cout << x_t2.stableNorm() /
-//        Map<VectorXd>(x_ref.data(), x_ref.size()).stableNorm() << " ";
-//    // stepper_rok4e
-//    initX(x_t2, gas);
-//    ret = stepper_rok4e.step(x_t2, 0.0, t1, dt);
-//    if (ret != ROWPlusSolverSpace::ComputeSucessful) {
-//      cout << "STAT = " << ret << endl;
-//      return 1;
-//    }
-//    x_t2 -= Map<VectorXd>(x_ref.data(), x_ref.size());
-//    cout << x_t2.stableNorm() /
-//        Map<VectorXd>(x_ref.data(), x_ref.size()).stableNorm() << " ";
-//
-//    cout << endl;
-//    dt /= 2.0;
-//  }
-//}

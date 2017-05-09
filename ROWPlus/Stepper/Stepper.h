@@ -24,9 +24,9 @@ class stepper {
     this->options.absTol = abs_error;
     this->options.h_max = Eigen::NumTraits<Scalar>::highest();
     this->options.h_min = Eigen::NumTraits<Scalar>::epsilon();
-    this->options.stepControl[0] = 0.25;
-    this->options.stepControl[1] = 4.00;
-    this->options.stepControl[2] = 0.75;
+    this->options.stepControl[0] = 0.20;
+    this->options.stepControl[1] = 5.00;
+    this->options.stepControl[2] = 0.80;
     this->solver =
         SolverPtr(new ODESolver<JacType, FunctorType>(_func, this->options));
   };
@@ -83,7 +83,7 @@ class rosenbrock4 : public stepper<rosenbrock4<Scalar>,
                                    Scalar> {
  public:
   rosenbrock4() {
-    this->options.TypeScheme = GRK4T;
+    this->options.TypeScheme = ROK4E;
     this->options.iUserJac = false;
     this->options.iUserFt = false;
     this->options.iUserAskedKill = false;

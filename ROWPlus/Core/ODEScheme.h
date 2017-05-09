@@ -41,30 +41,8 @@ class ODEScheme {
   const Index nStage;
   const Index nOrder;
 
-  // proot
-  Scalar proot(Scalar x) {
-    switch (nOrder) {
-      case (4):return sqrt(sqrt(x));
-        break;
-      case (3):return cbrt(x);
-        break;
-      case (2):return sqrt(x);
-        break;
-      default:return pow(x, 1.0 / (Scalar) nOrder);
-        break;
-    }
-  }
-  Scalar pproot(Scalar x) {
-    switch (nOrder) {
-      case (4):return cbrt(sqrt(x));
-        break;
-      case (3):return sqrt(sqrt(x));
-        break;
-      case (2):return cbrt(x);
-        break;
-      default:return pow(x, 1.0 / (Scalar) (nOrder + 1));
-        break;
-    }
+  inline Scalar proot(Scalar x, const Scalar a = 1.0) {
+    return pow(x, a / (Scalar) nOrder);
   }
 };
 
