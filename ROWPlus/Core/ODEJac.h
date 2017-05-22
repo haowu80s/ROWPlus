@@ -27,8 +27,7 @@ class ODEJac {
         iUserJac(_opt.iUserJac),
         maxKryDim(_opt.maxKryDim),
         epsfcn(_opt.epsfcn),
-        arnTol(_opt.absTol),
-        iReSize(true) {}
+        arnTol(_opt.absTol) {}
 
   ODEJacType type() const { return typeName; }
 
@@ -47,7 +46,6 @@ class ODEJac {
   };
 
   void updateOptions(const ODEOptions <Scalar> &_opt) {
-    iReSize = (maxKryDim != _opt.maxKryDim);
     iUserJac = _opt.iUserJac;
     maxKryDim = _opt.maxKryDim;
     epsfcn = _opt.epsfcn;
@@ -58,7 +56,6 @@ class ODEJac {
   FunctorType *functor;
   const ODEJacType typeName;
   bool iUserJac;
-  bool iReSize;
   Index neq;
   Index maxKryDim;
   Scalar epsfcn;
@@ -178,7 +175,7 @@ Eigen::DenseIndex ODEJac<T, FunctorType, Scalar>::fdjacv(FunctorType &Functor,
   const Index n = x.size();
   eigen_assert(fvec.size() == n);
   eps = sqrt((std::max)(epsfcn, epsmch)) /
-        std::max(vvec.blueNorm() * sqrt((Scalar) n), epsmch);
+      std::max(vvec.blueNorm() * sqrt((Scalar) n), epsmch);
   Matrix<Scalar, Eigen::Dynamic, 1> wa1(n);
 
   wa1 = x + eps * vvec;
@@ -249,7 +246,7 @@ class ODEJacEXA
     // obtain the Jacobian matrix
     if (!this->iUserJac) {
       if (this->fdjac(*this->functor, t, u, f, J,
-                this->neq - 1, this->neq - 1, this->epsfcn) < 0)
+                      this->neq - 1, this->neq - 1, this->epsfcn) < 0)
         return -1;
       nret = this->neq;
     } else {
@@ -275,7 +272,7 @@ class ODEJacEXA
 
  private:
   MatrixType J;
-  Eigen::PartialPivLU <MatrixType> MLU;
+  Eigen::PartialPivLU<MatrixType> MLU;
   Scalar ehg;
 
   void resizeWork() {
@@ -308,11 +305,13 @@ class ODEJacSAP
                  Eigen::Ref<VectorType> f,
                  Scalar _ehg,
                  bool rejected = false) {
-    resizeWork();
     ehg = _ehg;
     Index nret = 0;
     // obtain the krylov approx. to Jacobian matrix
-    if (!rejected) nret = arnoldi(t, u, f);
+    if (!rejected) {
+      clearWork();
+      nret = arnoldi(t, u, f);
+    }
     M = -H.topLeftCorner(mk, mk);
     M.diagonal() += VectorType::Constant(mk, ehg);
     // LU factorization
@@ -328,13 +327,6 @@ class ODEJacSAP
       wb1.resize(mk);
       wb2.resize(mk);
     }
-
-    // wb1= Q.leftCols(mk).transpose() * b;
-    // wb2 = MLU.solve(wb1);
-    // wb1 = Q.leftCols(mk) * wb2;
-    // wb1 /= -(ehg * ehg);
-    // x = (1.0 / ehg) * b + wb1;
-
     wb1.noalias() = Q.leftCols(mk).transpose() * b;
     wb2 = MLU.solve(wb1);
     wb1 /= ehg;
@@ -355,26 +347,30 @@ class ODEJacSAP
   MatrixType Q;
   MatrixType J;
   MatrixType M;
-  Eigen::PartialPivLU <MatrixType> MLU;
+  Eigen::PartialPivLU<MatrixType> MLU;
   Scalar ehg;
 
   void resizeWork() {
-    if (!this->iReSize) return;
-    this->iReSize = false;
     this->neq = this->functor->values();
-    eigen_assert(this->neq == this->functor->values());
+    wa1 = VectorType::Zero(this->neq);
+    wa2 = VectorType::Zero(this->neq);
+    wb1 = VectorType::Zero(this->maxKryDim);
+    wb2 = VectorType::Zero(this->maxKryDim);
+    H = MatrixType::Zero(this->maxKryDim + 1, this->maxKryDim);
+    Q = MatrixType::Zero(this->neq, this->maxKryDim + 1);
+    if (this->iUserJac) {
+      J = MatrixType::Zero(this->neq, this->neq);
+    }
+  }
 
-    // resize everything
-    wa1.resize(this->neq);
-    wa2.resize(this->neq);
-    wb1.resize(this->maxKryDim);
-    wb2.resize(this->maxKryDim);
-    H.resize(this->maxKryDim + 1, this->maxKryDim);
-    Q.resize(this->neq, this->maxKryDim + 1);
+  void clearWork() {
+    wa1.setZero();
+    wa2.setZero();
+    wb1.setZero();
+    wb2.setZero();
     H.setZero();
     Q.setZero();
     if (this->iUserJac) {
-      J.resize(this->neq, this->neq);
       J.setZero();
     }
   }
@@ -413,7 +409,8 @@ class ODEJacSAP
         }
       }
       H(i + 1, i) = wa2.blueNorm();
-      Q.col(i + 1) = wa2 / std::max(H(i + 1, i), Eigen::NumTraits<Scalar>::epsilon());
+      Q.col(i + 1) =
+          wa2 / std::max(H(i + 1, i), Eigen::NumTraits<Scalar>::epsilon());
       if (H(i + 1, i) <= this->arnTol * tau) {
         mk = i + 1;
         return nret;
@@ -485,15 +482,12 @@ class ODEJacHAP
   MatrixType H;
   MatrixType Q;
   MatrixType J;
-  Eigen::PartialPivLU <MatrixType> MLU;
+  Eigen::PartialPivLU<MatrixType> MLU;
   Scalar ehg;
 
   void resizeWork() {
-    if (!this->iReSize) return;
-    this->iReSize = false;
     this->neq = this->functor->values();
     eigen_assert(this->neq == this->functor->values());
-
     // resize everything
     wa1.resize(this->neq);
     wa2.resize(this->neq);

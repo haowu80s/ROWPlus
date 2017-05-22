@@ -49,7 +49,7 @@ class ODESolver {
       : opt(_opt), functor(_functor),
         scheme(ODESchemeFactory<Scalar>::make_ODEScheme(opt.TypeScheme)),
         jac(_functor, _opt) {
-    resizeWA();
+    resizeWork();
   }
 
   ROWPlusSolverSpace::Status step(Eigen::Ref<VectorType> u,
@@ -81,7 +81,7 @@ class ODESolver {
                     Eigen::Ref<VectorType> ft);
   inline int evalF(Scalar t, const Eigen::Ref<const VectorType> u,
                    Eigen::Ref<VectorType> f);
-  void resizeWA();
+  void resizeWork();
 };
 
 template<typename JacType, typename FunctorType, typename Scalar>
@@ -132,23 +132,17 @@ ODESolver<JacType, FunctorType, Scalar>::step(Eigen::Ref<VectorType> u,
     scal = u.array() * opt.relTol + opt.absTol;
     scal.noalias() = scal.cwiseInverse();
     // evaluate f(u0)
-    if (!rejected && !first && scheme->cf[0])
-      if ((failed = (evalF(t, u, fm) < 0))) {
-        return ROWPlusSolverSpace::UserAsked;
-      }
+    if (!rejected && !first && scheme->cf[0] && (failed = (evalF(t, u, fm) < 0)))
+      return ROWPlusSolverSpace::UserAsked;
     // initialize ehg*I-J
     ehg = 1.0 / (scheme->gamma * hs);
     nret = jac.init(t, u, fm, ehg, rejected);
-    if ((failed = (nret < 0))) {
-      return ROWPlusSolverSpace::UserAsked;
-    }
+    if ((failed = (nret < 0))) return ROWPlusSolverSpace::UserAsked;
     if (opt.iUserJac) stat.njac += nret;
     else stat.nfeval += nret;
     // Compute the derivative f_t in the nonautonomous case.
-    if (!opt.iAuto)
-      if ((failed = (evalFt(t, u, fm, fdt) < 0))) {
-        return ROWPlusSolverSpace::UserAsked;
-      }
+    if (!opt.iAuto && (failed = (evalFt(t, u, fm, fdt) < 0)))
+      return ROWPlusSolverSpace::UserAsked;
     // Loop over stages
     // 1st stage
     rhs = fm;
@@ -288,7 +282,7 @@ int ODESolver<JacType, FunctorType, Scalar>::evalF
 };
 
 template<typename JacType, typename FunctorType, typename Scalar>
-void ODESolver<JacType, FunctorType, Scalar>::resizeWA() {
+void ODESolver<JacType, FunctorType, Scalar>::resizeWork() {
   neq = functor->values();
   eigen_assert(neq == functor->values());
 
