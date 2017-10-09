@@ -287,14 +287,14 @@ void ODESolver<JacType, FunctorType, Scalar>::resizeWork() {
   eigen_assert(neq == functor->values());
 
   // resize everything
-  fm.resize(neq);
-  scal.resize(neq);
-  rhs.resize(neq);
-  uu.resize(neq);
-  fu0.resize(neq);
-  wa.resize(neq);
-  if (!opt.iAuto) fdt.resize(neq);
-  km.resize(neq, scheme->nStage);
+  fm = VectorType::Zero(neq);
+  scal = VectorType::Zero(neq);
+  rhs = VectorType::Zero(neq);
+  uu = VectorType::Zero(neq);
+  fu0 = VectorType::Zero(neq);
+  wa = VectorType::Zero(neq);
+  if (!opt.iAuto) fdt = VectorType::Zero(neq);
+  km = MatrixType::Zero(neq, scheme->nStage);
 }
 
 }

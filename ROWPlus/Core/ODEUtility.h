@@ -66,13 +66,23 @@ template<typename Scalar = double>
 struct ODEOptions {
   typedef Eigen::DenseIndex Index;
   ODEOptions()
-      : TypeScheme(GRK4T), relTol(1e-4),
-        absTol(sqrt(Eigen::NumTraits<Scalar>::epsilon())), h_init(0.0),
+      : TypeScheme(GRK4T),
+        relTol(1e-4),
+        absTol(sqrt(Eigen::NumTraits<Scalar>::epsilon())),
+        h_init(0.0),
         h_min(Eigen::NumTraits<Scalar>::epsilon()),
-        h_max(Eigen::NumTraits<Scalar>::highest()), maxSteps(100000), iAuto(true),
-        iUserJac(false), iUserFt(false), iUserAskedKill(false), iVerbose(false),
-        stepControl{0.25, 4.0, 0.8}, epsfcn(Scalar(0.)),
-        epsmch(Eigen::NumTraits<Scalar>::epsilon()), kryTol(1e-3), maxKryDim(4) {}
+        h_max(Eigen::NumTraits<Scalar>::highest()),
+        maxSteps(100000),
+        iAuto(true),
+        iUserJac(false),
+        iUserFt(false),
+        iUserAskedKill(false),
+        iVerbose(false),
+        stepControl{0.25, 4.0, 0.8},
+        epsfcn(Scalar(0.)),
+        epsmch(Eigen::NumTraits<Scalar>::epsilon()),
+        kryTol(1e-3),
+        maxKryDim(4) {}
   ODESchemeType TypeScheme;
   Scalar relTol;
   Scalar absTol;
